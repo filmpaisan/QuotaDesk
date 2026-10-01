@@ -614,12 +614,23 @@ final class WidgetWindow: NSPanel { override var canBecomeKey: Bool { true } }
     func fitToContent() {
         guard let content = window.contentView else { return }
         let size = content.fittingSize
-        guard size.width > 0, size.height > 0, abs(window.frame.height - size.height) > 0.5 || abs(window.frame.width - size.width) > 0.5 else { return }
+        guard size.width > 0, size.height > 0 else { return }
         var frame = window.frame
         frame.origin.y += frame.height - size.height
         frame.origin.x += frame.width - size.width
         frame.size = size
-        window.setFrame(frame, display: true)
+        frame = keptOnScreen(frame)
+        if frame != window.frame { window.setFrame(frame, display: true) }
+    }
+    /// Keeps the whole widget inside the visible area (below the menu bar, above the Dock).
+    func keptOnScreen(_ frame: NSRect) -> NSRect {
+        let screens = NSScreen.screens
+        guard let screen = screens.first(where: { $0.visibleFrame.intersects(frame) }) ?? NSScreen.main else { return frame }
+        let area = screen.visibleFrame
+        var frame = frame
+        frame.origin.x = min(max(frame.minX, area.minX), area.maxX - frame.width)
+        frame.origin.y = min(max(frame.minY, area.minY), area.maxY - frame.height)
+        return frame
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -630,7 +641,12 @@ final class WidgetWindow: NSPanel { override var canBecomeKey: Bool { true } }
         window.isMovableByWindowBackground = true
         window.hidesOnDeactivate = false
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
-        window.contentView = NSHostingView(rootView: WidgetView(model: model))
+        let host = NSHostingView(rootView: WidgetView(model: model))
+        // fitToContent() owns the window size. The hosting view's default min/max sizing also
+        // resizes the window, keeping the bottom edge fixed, so the widget crept upward on every
+        // launch. Keep only the intrinsic size, which fittingSize needs for measuring.
+        host.sizingOptions = [.intrinsicContentSize]
+        window.contentView = host
         window.setFrameAutosaveName("QuotaDeskWindow")
         if !window.setFrameUsingName("QuotaDeskWindow"), let screen = NSScreen.main {
             window.setFrameOrigin(NSPoint(x: screen.visibleFrame.maxX - 468, y: screen.visibleFrame.maxY - 335))
