@@ -51,12 +51,39 @@ enum Provider: String, CaseIterable { case codex, claude }
     @Published var refreshMinutes: Int { didSet { defaults.set(refreshMinutes, forKey: "refreshMinutes") } }
     /// "both", "codex" or "claude".
     @Published var providers: String { didSet { defaults.set(providers, forKey: "providers") } }
+    /// "custom" (wherever it was dragged) or a corner: "topRight", "topLeft", "bottomRight", "bottomLeft".
+    @Published var position: String { didSet { defaults.set(position, forKey: "position") } }
+    /// Display used for corner placement, by name; empty means the main display.
+    @Published var screenName: String { didSet { defaults.set(screenName, forKey: "screenName") } }
+    @Published var locked: Bool { didSet { defaults.set(locked, forKey: "locked") } }
+    @Published var dragHintSeen: Bool { didSet { defaults.set(dragHintSeen, forKey: "dragHintSeen") } }
+    static let positions = ["custom", "topRight", "topLeft", "bottomRight", "bottomLeft"]
+    static func positionLabel(_ position: String) -> String {
+        switch position {
+        case "topRight": return L("มุมขวาบน", "Top right")
+        case "topLeft": return L("มุมซ้ายบน", "Top left")
+        case "bottomRight": return L("มุมขวาล่าง", "Bottom right")
+        case "bottomLeft": return L("มุมซ้ายล่าง", "Bottom left")
+        default: return L("กำหนดเอง (ลากวาง)", "Custom (drag)")
+        }
+    }
+    /// Frame for a corner placement inside a screen's visible area, with an even margin.
+    nonisolated static func corner(_ position: String, size: NSSize, in area: NSRect, margin: CGFloat = 16) -> NSRect {
+        let left = position.hasSuffix("Left"), top = position.hasPrefix("top")
+        let x = left ? area.minX + margin : area.maxX - margin - size.width
+        let y = top ? area.maxY - margin - size.height : area.minY + margin
+        return NSRect(origin: NSPoint(x: x, y: y), size: size)
+    }
     private init() {
         language = defaults.string(forKey: "language") ?? "system"
         timeZoneID = defaults.string(forKey: "timeZone") ?? ""
         let saved = defaults.integer(forKey: "refreshMinutes")
         refreshMinutes = Self.refreshChoices.contains(saved) ? saved : 5
         providers = ["codex", "claude"].contains(defaults.string(forKey: "providers")) ? defaults.string(forKey: "providers")! : "both"
+        position = Self.positions.contains(defaults.string(forKey: "position") ?? "") ? defaults.string(forKey: "position")! : "topRight"
+        screenName = defaults.string(forKey: "screenName") ?? ""
+        locked = defaults.bool(forKey: "locked")
+        dragHintSeen = defaults.bool(forKey: "dragHintSeen")
     }
     func shows(_ provider: Provider) -> Bool { providers == "both" || providers == provider.rawValue }
     var timeZone: TimeZone { timeZoneID.isEmpty ? .current : TimeZone(identifier: timeZoneID) ?? .current }
@@ -479,6 +506,11 @@ struct WidgetView: View {
                         UserDefaults.standard.set(model.floating, forKey: "floating")
                         delegate?.updateLevel()
                     }
+                    Picker(L("ตำแหน่ง", "Position"), selection: $settings.position) {
+                        ForEach(AppSettings.positions, id: \.self) { Text(AppSettings.positionLabel($0)).tag($0) }
+                    }
+                    Toggle(L("ล็อกตำแหน่ง", "Lock position"), isOn: $settings.locked)
+                    Divider()
                     Button(L("ตั้งค่าและบัญชี…", "Settings & accounts…")) { delegate?.showSettings() }
                     Button(L("เปิด Codex usage", "Open Codex usage")) { NSWorkspace.shared.open(URL(string: "https://chatgpt.com/codex/settings/usage")!) }
                     Button(L("เปิด Claude usage", "Open Claude usage")) { NSWorkspace.shared.open(URL(string: "https://claude.ai/settings/usage")!) }
@@ -503,11 +535,21 @@ struct WidgetView: View {
                     if let date = lastUpdated { Text(TimeText.clock(date, zone: settings.timeZone)).monospacedDigit() }
                 }
                 if single { Text(AppSettings.zoneLabel(settings.timeZone)).lineLimit(1) }
+                if !settings.dragHintSeen && !settings.locked {
+                    Text(L("ลากพื้นหลังเพื่อย้าย · เลือกมุมได้ที่เมนู ⋯", "Drag the background to move · corners in the ⋯ menu"))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
             }.font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
         }.padding(19).frame(width: single ? 270 : 440)
             .background(LinearGradient(colors: [Color(red: 0.105, green: 0.125, blue: 0.15), Color(red: 0.055, green: 0.065, blue: 0.085)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 24))
             .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.14), lineWidth: 1))
             .foregroundStyle(.white).preferredColorScheme(.dark)
+            // The window is moved by hand: NSHostingView ignores isMovableByWindowBackground.
+            // Buttons still win taps; a drag needs a few points of movement first.
+            .contentShape(RoundedRectangle(cornerRadius: 24))
+            .gesture(DragGesture(minimumDistance: 3)
+                .onChanged { _ in delegate?.dragMoved() }
+                .onEnded { _ in delegate?.dragEnded() }, including: settings.locked ? .none : .all)
     }
     /// Retry first; if there are no credentials at all, open the settings to sign in.
     func connect(_ provider: Provider) {
@@ -550,6 +592,18 @@ struct SettingsView: View {
                 Toggle(L("เปิดอัตโนมัติเมื่อเข้าสู่ระบบ Mac", "Open at login"), isOn: Binding(get: { launchAtLogin }, set: setLaunchAtLogin))
                 if let loginError { Text(loginError).font(.caption).foregroundStyle(.red) }
             }
+            Section(L("ตำแหน่ง", "Position")) {
+                Picker(L("วางที่", "Place at"), selection: $settings.position) {
+                    ForEach(AppSettings.positions, id: \.self) { Text(AppSettings.positionLabel($0)).tag($0) }
+                }
+                if NSScreen.screens.count > 1 || !settings.screenName.isEmpty {
+                    Picker(L("จอ", "Display"), selection: $settings.screenName) {
+                        Text(L("จอหลัก", "Main display")).tag("")
+                        ForEach(NSScreen.screens.map(\.localizedName), id: \.self) { Text($0).tag($0) }
+                    }.disabled(settings.position == "custom")
+                }
+                Toggle(L("ล็อกตำแหน่ง (กันเผลอลาก)", "Lock position (prevents accidental drags)"), isOn: $settings.locked)
+            }
             Section(L("บัญชี", "Accounts")) {
                 account(.codex, name: "Codex", reading: model.codex)
                 account(.claude, name: "Claude", reading: model.claude)
@@ -562,7 +616,7 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
-        .formStyle(.grouped).frame(width: 480, height: 590)
+        .formStyle(.grouped).frame(width: 480, height: 700)
     }
     @ViewBuilder func account(_ provider: Provider, name: String, reading: Reading) -> some View {
         HStack(alignment: .firstTextBaseline) {
@@ -610,17 +664,45 @@ final class WidgetWindow: NSPanel { override var canBecomeKey: Bool { true } }
     var timer: Timer?
     let model = UsageModel()
     var observers: Set<AnyCancellable> = []
-    // Resize to the SwiftUI content, keeping the top-right corner where the user put it.
+    private var dragStart: (mouse: NSPoint, origin: NSPoint)?
+    /// Resize to the SwiftUI content. A corner placement snaps to that corner of the chosen
+    /// display; a custom placement keeps the top-right corner where the user dragged it.
     func fitToContent() {
-        guard let content = window.contentView else { return }
+        guard dragStart == nil, let content = window.contentView else { return }
         let size = content.fittingSize
         guard size.width > 0, size.height > 0 else { return }
+        let settings = AppSettings.shared
         var frame = window.frame
-        frame.origin.y += frame.height - size.height
-        frame.origin.x += frame.width - size.width
-        frame.size = size
-        frame = keptOnScreen(frame)
+        if settings.position != "custom", let screen = targetScreen() {
+            frame = AppSettings.corner(settings.position, size: size, in: screen.visibleFrame)
+        } else {
+            frame.origin.y += frame.height - size.height
+            frame.origin.x += frame.width - size.width
+            frame.size = size
+            frame = keptOnScreen(frame)
+        }
         if frame != window.frame { window.setFrame(frame, display: true) }
+    }
+    func targetScreen() -> NSScreen? {
+        let name = AppSettings.shared.screenName
+        return NSScreen.screens.first { $0.localizedName == name } ?? NSScreen.screens.first
+    }
+    /// Follows the pointer in screen coordinates, so moving the window doesn't skew the drag.
+    func dragMoved() {
+        let settings = AppSettings.shared
+        guard !settings.locked else { return }
+        let mouse = NSEvent.mouseLocation
+        if dragStart == nil {
+            dragStart = (mouse, window.frame.origin)
+            if settings.position != "custom" { settings.position = "custom" }
+            if !settings.dragHintSeen { settings.dragHintSeen = true }
+        }
+        guard let start = dragStart else { return }
+        window.setFrameOrigin(NSPoint(x: start.origin.x + mouse.x - start.mouse.x, y: start.origin.y + mouse.y - start.mouse.y))
+    }
+    func dragEnded() {
+        dragStart = nil
+        fitToContent()
     }
     /// Keeps the whole widget inside the visible area (below the menu bar, above the Dock).
     func keptOnScreen(_ frame: NSRect) -> NSRect {
@@ -638,7 +720,6 @@ final class WidgetWindow: NSPanel { override var canBecomeKey: Bool { true } }
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = true
-        window.isMovableByWindowBackground = true
         window.hidesOnDeactivate = false
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         let host = NSHostingView(rootView: WidgetView(model: model))
@@ -717,6 +798,9 @@ if CommandLine.arguments.contains("--self-test") {
     UserDefaults.standard.set("th", forKey: "language")
     precondition(TimeText.resetMoment(reset, now: now, zone: TimeZone(identifier: "Asia/Bangkok")!).hasSuffix("15 พ.ย. 2566 · 06:13 น."))
     UserDefaults.standard.set(savedLanguage, forKey: "language")
+    let area = NSRect(x: 0, y: 0, width: 1920, height: 1050), size = NSSize(width: 440, height: 307)
+    precondition(AppSettings.corner("topRight", size: size, in: area) == NSRect(x: 1464, y: 727, width: 440, height: 307))
+    precondition(AppSettings.corner("bottomLeft", size: size, in: area) == NSRect(x: 16, y: 16, width: 440, height: 307))
     precondition(ProviderAPI.windowLabel(seconds: 18000)?.en == "5 hours" && ProviderAPI.windowLabel(seconds: 604800)?.en == "Weekly")
     Task {
         let gate = RequestCooldown()
@@ -726,7 +810,7 @@ if CommandLine.arguments.contains("--self-test") {
         catch UsageError.message(_) { }
         catch { fatalError("Unexpected cooldown error") }
         try! await gate.check("other-provider")
-        print("PASS: Retry-After seconds/date/default, minimum delay, provider-isolated cooldown, time zone + language formatting")
+        print("PASS: Retry-After seconds/date/default, minimum delay, provider-isolated cooldown, time zone + language formatting, corner placement")
         exit(0)
     }
     RunLoop.main.run()
