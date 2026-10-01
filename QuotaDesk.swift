@@ -56,6 +56,8 @@ enum Provider: String, CaseIterable { case codex, claude }
     /// Display used for corner placement, by name; empty means the main display.
     @Published var screenName: String { didSet { defaults.set(screenName, forKey: "screenName") } }
     @Published var locked: Bool { didSet { defaults.set(locked, forKey: "locked") } }
+    /// "auto" follows macOS; "light" or "dark" forces one.
+    @Published var appearance: String { didSet { defaults.set(appearance, forKey: "appearance") } }
     @Published var dragHintSeen: Bool { didSet { defaults.set(dragHintSeen, forKey: "dragHintSeen") } }
     static let positions = ["custom", "topRight", "topLeft", "bottomRight", "bottomLeft"]
     static func positionLabel(_ position: String) -> String {
@@ -83,6 +85,7 @@ enum Provider: String, CaseIterable { case codex, claude }
         position = Self.positions.contains(defaults.string(forKey: "position") ?? "") ? defaults.string(forKey: "position")! : "topRight"
         screenName = defaults.string(forKey: "screenName") ?? ""
         locked = defaults.bool(forKey: "locked")
+        appearance = ["light", "dark"].contains(defaults.string(forKey: "appearance") ?? "") ? defaults.string(forKey: "appearance")! : "auto"
         dragHintSeen = defaults.bool(forKey: "dragHintSeen")
     }
     func shows(_ provider: Provider) -> Bool { providers == "both" || providers == provider.rawValue }
@@ -424,6 +427,21 @@ enum TimeText {
     }
 }
 
+/// Widget colors for the current light/dark appearance.
+struct Palette {
+    let dark: Bool
+    init(_ scheme: ColorScheme) { dark = scheme == .dark }
+    var codex: Color { dark ? .mint : Color(red: 0.0, green: 0.58, blue: 0.5) }
+    var claude: Color { dark ? Color(red: 0.91, green: 0.62, blue: 0.46) : Color(red: 0.8, green: 0.42, blue: 0.23) }
+    var background: LinearGradient {
+        LinearGradient(colors: dark ? [Color(red: 0.105, green: 0.125, blue: 0.15), Color(red: 0.055, green: 0.065, blue: 0.085)]
+                                    : [Color(red: 0.985, green: 0.988, blue: 0.993), Color(red: 0.925, green: 0.935, blue: 0.95)],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+    var stroke: Color { .primary.opacity(dark ? 0.14 : 0.1) }
+    var cardTint: Double { dark ? 0.045 : 0.07 }
+}
+
 struct QuotaRow: View {
     let quota: Quota
     let accent: Color
@@ -431,20 +449,20 @@ struct QuotaRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack {
-                Text(quota.label.text).font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+                Text(quota.label.text).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.6))
                 Spacer()
                 Text("\(Int(quota.used.rounded()))%").font(.system(size: 19, weight: .semibold, design: .rounded)).monospacedDigit()
             }
             GeometryReader { geo in
-                Capsule().fill(.white.opacity(0.08))
+                Capsule().fill(.primary.opacity(0.08))
                 Capsule().fill(quota.used >= 90 ? Color.red : accent).frame(width: geo.size.width * quota.used / 100)
             }.frame(height: 5)
             TimelineView(.periodic(from: .now, by: 60)) { context in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(TimeText.countdown(quota.reset, now: context.date)).font(.system(size: 10)).foregroundStyle(.white.opacity(0.42))
+                    Text(TimeText.countdown(quota.reset, now: context.date)).font(.system(size: 10)).foregroundStyle(.primary.opacity(0.42))
                     if let reset = quota.reset {
                         Text(TimeText.resetMoment(reset, now: context.date, zone: settings.timeZone))
-                            .font(.system(size: 10, weight: .medium)).monospacedDigit().foregroundStyle(.white.opacity(0.7))
+                            .font(.system(size: 10, weight: .medium)).monospacedDigit().foregroundStyle(.primary.opacity(0.7))
                             .lineLimit(1).minimumScaleFactor(0.8)
                     }
                 }
@@ -454,6 +472,7 @@ struct QuotaRow: View {
 }
 
 struct ProviderCard: View {
+    @Environment(\.colorScheme) private var scheme
     let name: String
     let symbol: String
     let accent: Color
@@ -470,7 +489,7 @@ struct ProviderCard: View {
             if reading.rows.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("—").font(.system(size: 32, weight: .light))
-                    Text(reading.message.text).font(.system(size: 11)).foregroundStyle(.white.opacity(0.65)).fixedSize(horizontal: false, vertical: true)
+                    Text(reading.message.text).font(.system(size: 11)).foregroundStyle(.primary.opacity(0.65)).fixedSize(horizontal: false, vertical: true)
                     Button(L("เชื่อมต่อ / เข้าสู่ระบบ", "Connect / Sign in"), action: connect).font(.system(size: 11)).buttonStyle(.plain).foregroundStyle(accent)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
@@ -478,12 +497,13 @@ struct ProviderCard: View {
             }
             Spacer(minLength: 0)
         }.padding(16).frame(maxWidth: .infinity, minHeight: 215, maxHeight: 215)
-            .background(accent.opacity(0.045), in: RoundedRectangle(cornerRadius: 17))
-            .overlay(RoundedRectangle(cornerRadius: 17).stroke(.white.opacity(0.08), lineWidth: 1))
+            .background(accent.opacity(Palette(scheme).cardTint), in: RoundedRectangle(cornerRadius: 17))
+            .overlay(RoundedRectangle(cornerRadius: 17).stroke(.primary.opacity(0.08), lineWidth: 1))
     }
 }
 
 struct WidgetView: View {
+    @Environment(\.colorScheme) private var scheme
     @ObservedObject var model: UsageModel
     @ObservedObject var settings = AppSettings.shared
     var delegate: AppDelegate? { NSApp.delegate as? AppDelegate }
@@ -492,13 +512,17 @@ struct WidgetView: View {
         Provider.allCases.filter(settings.shows).compactMap { ($0 == .codex ? model.codex : model.claude).updated }.min()
     }
     var body: some View {
+        let palette = Palette(scheme)
         VStack(spacing: 13) {
             HStack(spacing: 7) {
-                Image(systemName: "chart.bar.xaxis").foregroundStyle(Color.mint)
+                Image(systemName: "chart.bar.xaxis").foregroundStyle(palette.codex)
                 Text("QUOTADESK").font(.system(size: 11, weight: .bold, design: .rounded)).tracking(2)
-                Text(L("ใช้ไปแล้ว", "used")).font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
+                Text(L("ใช้ไปแล้ว", "used")).font(.system(size: 10)).foregroundStyle(.primary.opacity(0.4))
                 Spacer()
-                Button { model.refresh() } label: { Image(systemName: "arrow.clockwise").font(.system(size: 12)) }
+                // Both header icons get the same fixed hit box, apart from each other and the corner.
+                Button { model.refresh() } label: {
+                    Image(systemName: "arrow.clockwise").font(.system(size: 12, weight: .medium)).frame(width: 22, height: 22).contentShape(Rectangle())
+                }
                     .disabled(model.busy).help(L("รีเฟรชยอดใช้ไป · เว้นอย่างน้อย 1 นาที", "Refresh usage · at most once a minute"))
                 Menu {
                     Button(model.floating ? L("วางบนเดสก์ท็อป", "Place on desktop") : L("ลอยเหนือหน้าต่างอื่น", "Float above windows")) {
@@ -516,14 +540,16 @@ struct WidgetView: View {
                     Button(L("เปิด Claude usage", "Open Claude usage")) { NSWorkspace.shared.open(URL(string: "https://claude.ai/settings/usage")!) }
                     Divider()
                     Button(L("ออกจาก QuotaDesk", "Quit QuotaDesk")) { NSApp.terminate(nil) }
-                } label: { Image(systemName: "ellipsis") }.menuStyle(.borderlessButton).frame(width: 20)
-            }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.7))
+                } label: { Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold)) }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().frame(width: 22, height: 22)
+                    .help(L("เมนู", "Menu"))
+            }.padding(.trailing, 2).buttonStyle(.plain).foregroundStyle(.primary.opacity(0.7))
             HStack(spacing: 10) {
                 if settings.shows(.codex) {
-                    ProviderCard(name: "Codex", symbol: "chevron.left.forwardslash.chevron.right", accent: .mint, reading: model.codex) { connect(.codex) }
+                    ProviderCard(name: "Codex", symbol: "chevron.left.forwardslash.chevron.right", accent: palette.codex, reading: model.codex) { connect(.codex) }
                 }
                 if settings.shows(.claude) {
-                    ProviderCard(name: "Claude", symbol: "sun.max", accent: Color(red: 0.91, green: 0.62, blue: 0.46), reading: model.claude) { connect(.claude) }
+                    ProviderCard(name: "Claude", symbol: "sun.max", accent: palette.claude, reading: model.claude) { connect(.claude) }
                 }
             }
             // One card is too narrow for a single footer line, so the time zone moves below.
@@ -537,13 +563,13 @@ struct WidgetView: View {
                 if single { Text(AppSettings.zoneLabel(settings.timeZone)).lineLimit(1) }
                 if !settings.dragHintSeen && !settings.locked {
                     Text(L("ลากพื้นหลังเพื่อย้าย · เลือกมุมได้ที่เมนู ⋯", "Drag the background to move · corners in the ⋯ menu"))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
-            }.font(.system(size: 10)).foregroundStyle(.white.opacity(0.4))
+            }.font(.system(size: 10)).foregroundStyle(.primary.opacity(0.4))
         }.padding(19).frame(width: single ? 270 : 440)
-            .background(LinearGradient(colors: [Color(red: 0.105, green: 0.125, blue: 0.15), Color(red: 0.055, green: 0.065, blue: 0.085)], startPoint: .topLeading, endPoint: .bottomTrailing), in: RoundedRectangle(cornerRadius: 24))
-            .overlay(RoundedRectangle(cornerRadius: 24).stroke(.white.opacity(0.14), lineWidth: 1))
-            .foregroundStyle(.white).preferredColorScheme(.dark)
+            .background(palette.background, in: RoundedRectangle(cornerRadius: 24))
+            .overlay(RoundedRectangle(cornerRadius: 24).stroke(palette.stroke, lineWidth: 1))
+            .foregroundStyle(.primary)
             // The window is moved by hand: NSHostingView ignores isMovableByWindowBackground.
             // Buttons still win taps; a drag needs a few points of movement first.
             .contentShape(RoundedRectangle(cornerRadius: 24))
@@ -581,6 +607,11 @@ struct SettingsView: View {
                         Text(TimeZone(identifier: id).map(AppSettings.zoneLabel) ?? id).tag(id)
                     }
                 }
+                Picker(L("ธีม", "Appearance"), selection: $settings.appearance) {
+                    Text(L("อัตโนมัติ (ตามระบบ)", "Auto (system)")).tag("auto")
+                    Text(L("สว่าง", "Light")).tag("light")
+                    Text(L("มืด", "Dark")).tag("dark")
+                }
                 Picker(L("แสดง", "Show"), selection: $settings.providers) {
                     Text(L("ทั้งคู่", "Both")).tag("both")
                     Text("Codex").tag("codex")
@@ -616,7 +647,7 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
-        .formStyle(.grouped).frame(width: 480, height: 700)
+        .formStyle(.grouped).frame(width: 480, height: 740)
     }
     @ViewBuilder func account(_ provider: Provider, name: String, reading: Reading) -> some View {
         HStack(alignment: .firstTextBaseline) {
@@ -737,6 +768,10 @@ final class WidgetWindow: NSPanel { override var canBecomeKey: Bool { true } }
             .sink { [weak self] _ in DispatchQueue.main.async { self?.fitToContent() } }.store(in: &observers)
         AppSettings.shared.$providers.dropFirst().removeDuplicates().receive(on: RunLoop.main)
             .sink { [weak self] _ in DispatchQueue.main.async { self?.model.refresh(force: true) } }.store(in: &observers)
+        AppSettings.shared.$appearance.receive(on: RunLoop.main)
+            .sink { value in
+                NSApp.appearance = value == "light" ? NSAppearance(named: .aqua) : value == "dark" ? NSAppearance(named: .darkAqua) : nil
+            }.store(in: &observers)
         AppSettings.shared.$language.receive(on: RunLoop.main)
             .sink { [weak self] _ in DispatchQueue.main.async { self?.buildMenu() } }.store(in: &observers)
         updateLevel()
