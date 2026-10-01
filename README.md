@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/filmpaisan/QuotaDesk/main/install.s
 - **Exact reset times:** a countdown plus the date and time, e.g. `Today · Thu 1 Oct 2026 · 13:49`
 - **Your time zone:** follow the Mac, or pick any zone
 - **English or Thai UI:** Thai uses Buddhist-era dates
-- **Light, dark or auto theme:** auto follows macOS
+- **Dark, light or auto theme:** dark by default; auto follows macOS
 - **Show both, Codex only or Claude only:** a hidden provider is never contacted
 - **Adjustable refresh:** 1–60 minutes, 5 by default to stay clear of rate limits
 - **One-click sign-in:** uses each provider's official CLI, so the app never sees your password
@@ -115,7 +115,7 @@ The script downloads the latest source, builds it on your Mac (about 10 seconds)
 - **บอกเวลารีเซ็ตชัดเจน:** มีทั้งนับถอยหลังและวันเวลาจริง เช่น `วันนี้ · พฤหัส 1 ต.ค. 2569 · 13:49 น.`
 - **เลือกเขตเวลาได้:** ตามเครื่อง หรือเลือกเขตใดก็ได้
 - **ภาษาไทยหรืออังกฤษ:** ภาษาไทยแสดงปีเป็น พ.ศ.
-- **ธีมสว่าง มืด หรืออัตโนมัติ:** แบบอัตโนมัติเปลี่ยนตาม macOS
+- **ธีมมืด สว่าง หรืออัตโนมัติ:** ค่าเริ่มต้นเป็นธีมมืด แบบอัตโนมัติเปลี่ยนตาม macOS
 - **เลือกได้ว่าจะแสดงทั้งคู่, เฉพาะ Codex หรือเฉพาะ Claude:** ฝั่งที่ซ่อนจะไม่ถูกเรียกใช้งานเลย
 - **ตั้งความถี่รีเฟรชได้:** 1–60 นาที ค่าเริ่มต้น 5 นาทีเพื่อไม่ให้ติด rate limit
 - **เข้าสู่ระบบได้ในคลิกเดียว:** ผ่าน CLI ทางการของแต่ละบริการ แอปไม่เห็นรหัสผ่านของคุณ

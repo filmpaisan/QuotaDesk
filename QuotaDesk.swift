@@ -55,7 +55,7 @@ enum Provider: String, CaseIterable { case codex, claude }
     /// Display used for corner placement, by name; empty means the main display.
     @Published var screenName: String { didSet { defaults.set(screenName, forKey: "screenName") } }
     @Published var locked: Bool { didSet { defaults.set(locked, forKey: "locked") } }
-    /// "auto" follows macOS; "light" or "dark" forces one.
+    /// "dark" (default), "light", or "auto" to follow macOS.
     @Published var appearance: String { didSet { defaults.set(appearance, forKey: "appearance") } }
     @Published var dragHintSeen: Bool { didSet { defaults.set(dragHintSeen, forKey: "dragHintSeen") } }
     static let positions = ["custom", "topRight", "topLeft", "bottomRight", "bottomLeft"]
@@ -84,7 +84,7 @@ enum Provider: String, CaseIterable { case codex, claude }
         position = Self.positions.contains(defaults.string(forKey: "position") ?? "") ? defaults.string(forKey: "position")! : "topRight"
         screenName = defaults.string(forKey: "screenName") ?? ""
         locked = defaults.bool(forKey: "locked")
-        appearance = ["light", "dark"].contains(defaults.string(forKey: "appearance") ?? "") ? defaults.string(forKey: "appearance")! : "auto"
+        appearance = ["auto", "light"].contains(defaults.string(forKey: "appearance") ?? "") ? defaults.string(forKey: "appearance")! : "dark"
         dragHintSeen = defaults.bool(forKey: "dragHintSeen")
     }
     func shows(_ provider: Provider) -> Bool { providers == "both" || providers == provider.rawValue }
