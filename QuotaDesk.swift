@@ -667,7 +667,10 @@ final class WidgetWindow: NSPanel { override var canBecomeKey: Bool { true } }
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in Task { @MainActor in self?.model.tick() } }
         if CommandLine.arguments.contains("--settings") { showSettings() }
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(wakeRefresh), name: NSWorkspace.didWakeNotification, object: nil)
+        // A display was unplugged, rearranged or changed resolution: pull the widget back into view.
+        NotificationCenter.default.addObserver(self, selector: #selector(screensChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
     }
+    @objc func screensChanged() { fitToContent() }
     func buildMenu() {
         let menu = NSMenu()
         menu.addItem(withTitle: L("แสดง QuotaDesk", "Show QuotaDesk"), action: #selector(show), keyEquivalent: "")
