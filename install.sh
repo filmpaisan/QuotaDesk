@@ -46,7 +46,14 @@ fi
 
 say "Building (the first build can take a minute or two)…"
 pkill -x QuotaDesk 2>/dev/null || true
-zsh "$src/build.sh"
+# Keep the compiler's output out of the way unless the build actually fails.
+log="$(mktemp)"
+if ! zsh "$src/build.sh" >"$log" 2>&1; then
+  cat "$log" >&2
+  rm -f "$log"
+  fail "The build failed (details above). Please open an issue: https://github.com/$REPO/issues"
+fi
+rm -f "$log"
 
 say "Starting QuotaDesk…"
 open "$APP"

@@ -1,7 +1,6 @@
 import AppKit
 import SwiftUI
 import Security
-import LocalAuthentication
 import Combine
 import ServiceManagement
 
@@ -242,26 +241,24 @@ final class ProviderAPI {
         var data = claudeCredentialData()
         if data == nil {
             var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: claudeService,
-                kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
-            let context = LAContext()
-            context.interactionNotAllowed = !interactive
-            query[kSecUseAuthenticationContext as String] = context
-            // Claude Code uses a legacy login Keychain item. Suppress that UI too.
-            var previousInteraction: DarwinBoolean = true
-            if !interactive {
-                guard SecKeychainGetUserInteractionAllowed(&previousInteraction) == errSecSuccess,
-                      SecKeychainSetUserInteractionAllowed(false) == errSecSuccess else {
+                kSecAttrService as String: claudeService, kSecMatchLimit as String: kSecMatchLimitOne]
+            if interactive {
+                // Only an explicit Connect may show macOS's Keychain permission dialog.
+                query[kSecReturnData as String] = true
+                var item: CFTypeRef?
+                let status = SecItemCopyMatching(query as CFDictionary, &item)
+                if status == errSecAuthFailed || status == errSecUserCanceled {
+                    throw failure("กด เชื่อมต่อ เพื่ออนุญาต Keychain", "Click Connect to allow Keychain access")
+                }
+                if status == errSecSuccess { data = item as? Data }
+            } else {
+                // Background refresh never asks: checking that the item exists (without its
+                // secret) needs no permission, and tells "not signed in" apart from "needs access".
+                query[kSecReturnAttributes as String] = true
+                if SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess {
                     throw failure("กด เชื่อมต่อ เพื่ออนุญาต Keychain", "Click Connect to allow Keychain access")
                 }
             }
-            defer { if !interactive { SecKeychainSetUserInteractionAllowed(previousInteraction.boolValue) } }
-            var item: CFTypeRef?
-            let status = SecItemCopyMatching(query as CFDictionary, &item)
-            if status == errSecInteractionNotAllowed || status == errSecAuthFailed || status == errSecUserCanceled {
-                throw failure("กด เชื่อมต่อ เพื่ออนุญาต Keychain", "Click Connect to allow Keychain access")
-            }
-            if status == errSecSuccess { data = item as? Data }
         }
         guard let data, let json = try? object(data),
               let oauth = json["claudeAiOauth"] as? [String: Any],
