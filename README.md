@@ -49,14 +49,20 @@
 
 ### Install
 
+Paste this into Terminal:
+
 ```sh
-git clone https://github.com/filmpaisan/QuotaDesk.git
-cd QuotaDesk
-zsh build.sh                       # builds and installs ~/Applications/QuotaDesk.app
-open ~/Applications/QuotaDesk.app
+curl -fsSL https://raw.githubusercontent.com/filmpaisan/QuotaDesk/main/install.sh | zsh
 ```
 
-To use your own bundle identifier, run `BUNDLE_ID=com.yourname.quotadesk zsh build.sh`.
+The script downloads the latest source, builds it on your Mac (about 10 seconds), installs it to `~/Applications/QuotaDesk.app` and starts it. It doesn't need `sudo`. Because the app is built locally, Gatekeeper doesn't block it. If the Xcode Command Line Tools are missing, the script opens their installer; run the command again once that finishes.
+
+| | |
+|---|---|
+| **Update** | Run the same command again |
+| **From a clone** | `git clone https://github.com/filmpaisan/QuotaDesk.git && cd QuotaDesk && ./install.sh` |
+| **Uninstall** | `curl -fsSL https://raw.githubusercontent.com/filmpaisan/QuotaDesk/main/install.sh \| zsh -s -- --uninstall` |
+| **Custom bundle ID** | `BUNDLE_ID=com.yourname.quotadesk zsh build.sh` |
 
 ### Usage
 
@@ -89,7 +95,7 @@ To use your own bundle identifier, run `BUNDLE_ID=com.yourname.quotadesk zsh bui
 ```
 
 > [!NOTE]
-> `build.sh` signs the app ad-hoc. If you share a prebuilt `.app`, the recipient has to right-click → **Open** the first time. Building from source avoids that.
+> Prefer the install command over sharing a prebuilt `.app`. A downloaded `.app` is only ad-hoc signed, so the recipient has to right-click → **Open** the first time.
 
 ---
 
@@ -115,14 +121,20 @@ To use your own bundle identifier, run `BUNDLE_ID=com.yourname.quotadesk zsh bui
 
 ### ติดตั้ง
 
+วางคำสั่งนี้ใน Terminal:
+
 ```sh
-git clone https://github.com/filmpaisan/QuotaDesk.git
-cd QuotaDesk
-zsh build.sh                       # build และติดตั้งที่ ~/Applications/QuotaDesk.app
-open ~/Applications/QuotaDesk.app
+curl -fsSL https://raw.githubusercontent.com/filmpaisan/QuotaDesk/main/install.sh | zsh
 ```
 
-ถ้าต้องการใช้ bundle identifier ของตัวเอง ให้รัน `BUNDLE_ID=com.yourname.quotadesk zsh build.sh`
+สคริปต์จะดาวน์โหลด source ล่าสุด build บนเครื่องคุณ (ประมาณ 10 วินาที) ติดตั้งที่ `~/Applications/QuotaDesk.app` แล้วเปิดแอปให้ ไม่ต้องใช้ `sudo` และเพราะ build บนเครื่องเอง macOS จึงไม่บล็อกแอป ถ้ายังไม่มี Xcode Command Line Tools สคริปต์จะเปิดตัวติดตั้งให้ ติดตั้งเสร็จแล้วรันคำสั่งเดิมอีกครั้ง
+
+| | |
+|---|---|
+| **อัปเดต** | รันคำสั่งเดิมอีกครั้ง |
+| **ติดตั้งจากโฟลเดอร์ที่โคลนไว้** | `git clone https://github.com/filmpaisan/QuotaDesk.git && cd QuotaDesk && ./install.sh` |
+| **ถอนการติดตั้ง** | `curl -fsSL https://raw.githubusercontent.com/filmpaisan/QuotaDesk/main/install.sh \| zsh -s -- --uninstall` |
+| **ใช้ bundle ID ของตัวเอง** | `BUNDLE_ID=com.yourname.quotadesk zsh build.sh` |
 
 ### วิธีใช้
 
@@ -155,7 +167,7 @@ open ~/Applications/QuotaDesk.app
 ```
 
 > [!NOTE]
-> `build.sh` ลงนามแอปแบบ ad-hoc ถ้าแจกไฟล์ `.app` ที่ build แล้ว ผู้รับต้องคลิกขวา → **Open** ในครั้งแรก การ build จาก source เองจะไม่ติดปัญหานี้
+> แนะนำให้ใช้คำสั่งติดตั้งแทนการแจกไฟล์ `.app` ที่ build แล้ว ไฟล์ `.app` ที่ดาวน์โหลดไปลงนามแบบ ad-hoc เท่านั้น ผู้รับต้องคลิกขวา → **Open** ในครั้งแรก
 
 ---
 
