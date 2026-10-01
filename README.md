@@ -1,6 +1,6 @@
 <div align="center">
 
-# QuotaDesk
+<img src="docs/images/cover.jpg" alt="QuotaDesk: Codex and Claude quota at a glance" width="100%">
 
 **See your Codex and Claude subscription quota at a glance, right on your Mac desktop.**<br>
 **ดูโควตา Codex และ Claude ที่ใช้ไปได้ในพริบตา บนเดสก์ท็อป Mac ของคุณ**
