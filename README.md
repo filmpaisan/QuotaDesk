@@ -1,69 +1,170 @@
+<div align="center">
+
 # QuotaDesk
 
-A small macOS desktop widget that shows how much of your **Codex** (ChatGPT) and **Claude** subscription quota you have used, with reset countdowns and exact reset times.
+**See your Codex and Claude subscription quota at a glance, right on your Mac desktop.**<br>
+**ดูโควตา Codex และ Claude ที่ใช้ไปได้ในพริบตา บนเดสก์ท็อป Mac ของคุณ**
 
-วิดเจ็ตบนเดสก์ท็อป macOS แสดงโควตาที่ใช้ไปของ Codex และ Claude พร้อมเวลารีเซ็ต รองรับภาษาไทยและอังกฤษ
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-SwiftUI-F05138?logo=swift&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f)
+![Languages](https://img.shields.io/badge/UI-English%20%7C%20%E0%B9%84%E0%B8%97%E0%B8%A2-4c8eda)
 
-## Requirements
+[English](#english) · [ภาษาไทย](#ภาษาไทย)
 
-- macOS 14 or later, with the Xcode command-line tools installed (`xcode-select --install`)
-- A Codex and/or Claude **subscription** (an API key won't work)
-- The official CLIs used to sign in: [Codex CLI](https://github.com/openai/codex) and [Claude Code](https://docs.anthropic.com/en/docs/claude-code/setup)
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/widget-en.png" width="420" alt="QuotaDesk widget in English"></td>
+    <td align="center"><img src="docs/images/widget-th.png" width="420" alt="วิดเจ็ต QuotaDesk ภาษาไทย"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>English</sub></td>
+    <td align="center"><sub>ภาษาไทย</sub></td>
+  </tr>
+</table>
 
-## Build and run
+</div>
+
+---
+
+## English
+
+### Features
+
+- **Both providers side by side:** Codex (ChatGPT) and Claude, showing the 5-hour and weekly windows
+- **Exact reset times:** a countdown plus the date and time, e.g. `Today · Thu 1 Oct 2026 · 13:49`
+- **Your time zone:** follow the Mac, or pick any zone
+- **English or Thai UI:** Thai uses Buddhist-era dates
+- **Show both, Codex only or Claude only:** a hidden provider is never contacted
+- **Adjustable refresh:** 1–60 minutes, 5 by default to stay clear of rate limits
+- **One-click sign-in:** uses each provider's official CLI, so the app never sees your password
+- **Lives on the desktop:** sits behind your windows, or floats on top if you prefer, and can open at login
+
+### Requirements
+
+- macOS 14 or later, with the Xcode command-line tools (`xcode-select --install`)
+- A Codex and/or Claude **subscription** (API keys aren't supported)
+- The official CLIs: [Codex CLI](https://github.com/openai/codex) and [Claude Code](https://docs.anthropic.com/en/docs/claude-code/setup)
+
+### Install
 
 ```sh
-zsh build.sh                                  # installs to ~/Applications/QuotaDesk.app
-BUNDLE_ID=com.yourname.quotadesk zsh build.sh   # optional: your own bundle identifier
-open ~/Applications/"QuotaDesk.app"
+git clone https://github.com/filmpaisan/QuotaDesk.git
+cd QuotaDesk
+zsh build.sh                       # builds and installs ~/Applications/QuotaDesk.app
+open ~/Applications/QuotaDesk.app
 ```
 
-Diagnostics, which print only percentages and sanitized errors:
+To use your own bundle identifier, run `BUNDLE_ID=com.yourname.quotadesk zsh build.sh`.
+
+### Usage
+
+<img src="docs/images/settings-en.png" width="360" align="right" alt="Settings window">
+
+1. Open **Settings & accounts…** from the `⋯` menu on the widget or the menu-bar icon (⌘,).
+2. Under **Accounts**, click **Sign in** for each provider. Terminal opens and runs `codex login` or `claude auth login`. Finish the steps in your browser, and the widget updates within a few seconds.
+3. Pick your **language**, **time zone**, which providers to **show** and how often to **refresh**.
+
+- Drag the widget's background to move it.
+- `⋯` → **Float above windows** keeps it on top.
+- Percentages show quota **used**. A bar turns red at 90%.
+
+<br clear="right">
+
+### Privacy and security
+
+- **No passwords.** Sign-in happens on the provider's own website through its official CLI.
+- **Uses existing credentials only:** the app reads what the CLIs already saved, `~/.codex/auth.json` (or `$CODEX_HOME`) and Claude Code's `~/.claude/.credentials.json` or its `Claude Code-credentials` Keychain item. The Keychain item is read through `/usr/bin/security`, so there are no repeated password prompts.
+- **Tokens stay put.** Each token is sent only to its own provider's HTTPS usage endpoint. It's never written to disk, logged or copied elsewhere, and the app never refreshes or rewrites the CLIs' tokens.
+- **No secrets in settings:** language, time zone, refresh interval, shown providers and window position are stored in standard UserDefaults.
+- **Rate-limit friendly:** an HTTP 429 pauses only that provider, following `Retry-After`.
+
+### Diagnostics
 
 ```sh
-~/Applications/"QuotaDesk.app"/Contents/MacOS/QuotaDesk --self-test   # offline unit checks
-~/Applications/"QuotaDesk.app"/Contents/MacOS/QuotaDesk --check       # live usage read
+~/Applications/QuotaDesk.app/Contents/MacOS/QuotaDesk --self-test   # offline unit checks
+~/Applications/QuotaDesk.app/Contents/MacOS/QuotaDesk --check       # live read, prints percentages only
 ```
 
-The app is ad-hoc signed by `build.sh`. If you share a prebuilt `.app`, recipients have to right-click → Open the first time (Gatekeeper). Sharing the source and having each person run `build.sh` avoids that.
+> [!NOTE]
+> `build.sh` signs the app ad-hoc. If you share a prebuilt `.app`, the recipient has to right-click → **Open** the first time. Building from source avoids that.
 
-## Use
+---
 
-- Open **Settings & accounts…** from the widget's `⋯` menu or the menu-bar icon (⌘,):
-  - **Language:** System, ไทย or English
-  - **Show:** both cards, Codex only or Claude only. A hidden provider isn't read or contacted at all, and with one card the widget becomes narrower.
-  - **Time zone:** used for the exact reset times and the "last updated" clock (defaults to the Mac's zone)
-  - **Refresh every:** 1, 2, 5 (default), 10, 15, 30 or 60 minutes. The 5-minute default keeps requests well under the providers' rate limits.
-  - **Open at login**
-  - **Accounts:** connection status, **Sign in** for each provider, and **Check now**
-- Under each bar, the widget shows a countdown ("Resets in 4h 32m") and the exact time, e.g. `Tomorrow · Thu 1 Oct 2026 · 02:49` or `พรุ่งนี้ · พฤหัส 1 ต.ค. 2569 · 13:49 น.`.
-- Drag the background to move the widget. Use `⋯` → *Float above windows* to keep it on top.
-- Percentages are the share of quota **used**.
+## ภาษาไทย
 
-## Sign-in and privacy
+### ความสามารถ
 
-- **Sign in** opens Terminal and runs the provider's own command (`codex login` / `claude auth login`). You enter your password only on the provider's website. QuotaDesk never sees or stores passwords.
-- The app reads credentials the CLIs already saved: `~/.codex/auth.json` (or `$CODEX_HOME`), and Claude Code's `~/.claude/.credentials.json` or the `Claude Code-credentials` Keychain item. For the Keychain item it uses `/usr/bin/security`, which Claude Code itself uses to write that item, so reading it doesn't trigger password prompts after each token refresh.
-- Each access token is sent only to its own provider's HTTPS usage endpoint. A Claude token may be kept **in memory** for up to 10 minutes. Tokens are never written to disk, logged or copied to another Keychain item, and the app never rotates or rewrites the CLIs' tokens.
-- After sign-in, the app checks every 5 seconds (locally, for up to 5 minutes) whether the CLI has written new credentials, then refreshes once.
-- Settings (`language`, `timeZone`, `refreshMinutes`, `providers`, `floating` and window position) are stored in the app's standard UserDefaults and contain no secrets.
-- The repository contains no API keys, client secrets or personal data. `build-cache/` and built `.app` bundles are git-ignored.
+- **ดูได้ทั้งสองบริการในที่เดียว:** Codex (ChatGPT) และ Claude แสดงทั้งรอบ 5 ชั่วโมงและรอบรายสัปดาห์
+- **บอกเวลารีเซ็ตชัดเจน:** มีทั้งนับถอยหลังและวันเวลาจริง เช่น `วันนี้ · พฤหัส 1 ต.ค. 2569 · 13:49 น.`
+- **เลือกเขตเวลาได้:** ตามเครื่อง หรือเลือกเขตใดก็ได้
+- **ภาษาไทยหรืออังกฤษ:** ภาษาไทยแสดงปีเป็น พ.ศ.
+- **เลือกได้ว่าจะแสดงทั้งคู่, เฉพาะ Codex หรือเฉพาะ Claude:** ฝั่งที่ซ่อนจะไม่ถูกเรียกใช้งานเลย
+- **ตั้งความถี่รีเฟรชได้:** 1–60 นาที ค่าเริ่มต้น 5 นาทีเพื่อไม่ให้ติด rate limit
+- **เข้าสู่ระบบได้ในคลิกเดียว:** ผ่าน CLI ทางการของแต่ละบริการ แอปไม่เห็นรหัสผ่านของคุณ
+- **อยู่บนเดสก์ท็อป:** อยู่หลังหน้าต่างอื่น หรือตั้งให้ลอยอยู่ด้านบนก็ได้ และเปิดอัตโนมัติเมื่อเข้าเครื่องได้
 
-## Rate limits
+### สิ่งที่ต้องมี
 
-Automatic refreshes follow the chosen interval. Manual and wake refreshes are at least 55 seconds apart. An HTTP 429 pauses only that provider, following `Retry-After` (minimum 1 minute, default 5 minutes). The usage endpoints are provider-internal and may change without notice.
+- macOS 14 ขึ้นไป และ Xcode command-line tools (`xcode-select --install`)
+- **บัญชีสมาชิก** Codex และ/หรือ Claude (ใช้ API key ไม่ได้)
+- CLI ทางการ: [Codex CLI](https://github.com/openai/codex) และ [Claude Code](https://docs.anthropic.com/en/docs/claude-code/setup)
 
-## References
+### ติดตั้ง
 
-- Codex usage endpoint: https://github.com/steipete/CodexBar/blob/main/docs/codex.md
-- Claude OAuth usage endpoint: https://github.com/steipete/CodexBar/blob/main/docs/claude.md
+```sh
+git clone https://github.com/filmpaisan/QuotaDesk.git
+cd QuotaDesk
+zsh build.sh                       # build และติดตั้งที่ ~/Applications/QuotaDesk.app
+open ~/Applications/QuotaDesk.app
+```
 
-This code was written independently; no CodexBar source is copied or bundled.
+ถ้าต้องการใช้ bundle identifier ของตัวเอง ให้รัน `BUNDLE_ID=com.yourname.quotadesk zsh build.sh`
 
-## Disclaimer
+### วิธีใช้
 
-QuotaDesk is an independent, unofficial project. It is not affiliated with, endorsed by or sponsored by OpenAI or Anthropic. "Codex", "ChatGPT" and "Claude" are trademarks of their respective owners and are used here only to describe compatibility. The usage endpoints it reads are undocumented and may change or stop working at any time. Use at your own risk.
+<img src="docs/images/settings-th.png" width="360" align="right" alt="หน้าตั้งค่า">
+
+1. เปิด **ตั้งค่าและบัญชี…** จากเมนู `⋯` บนวิดเจ็ต หรือไอคอนบนแถบเมนู (⌘,)
+2. ในส่วน **บัญชี** กด **เข้าสู่ระบบ** ของแต่ละบริการ แอปจะเปิด Terminal และรัน `codex login` หรือ `claude auth login` ให้ ทำขั้นตอนในเบราว์เซอร์ให้เสร็จ แล้ววิดเจ็ตจะอัปเดตเองภายในไม่กี่วินาที
+3. เลือก **ภาษา**, **เขตเวลา**, บริการที่จะ **แสดง** และความถี่ในการ **รีเฟรช**
+
+- ลากพื้นหลังวิดเจ็ตเพื่อย้ายตำแหน่ง
+- `⋯` → **ลอยเหนือหน้าต่างอื่น** เพื่อให้วิดเจ็ตอยู่ด้านบนตลอด
+- เปอร์เซ็นต์คือโควตาที่ **ใช้ไปแล้ว** แถบจะเป็นสีแดงเมื่อถึง 90%
+
+<br clear="right">
+
+### ความเป็นส่วนตัวและความปลอดภัย
+
+- **ไม่ต้องให้รหัสผ่านกับแอป:** การเข้าสู่ระบบทำบนเว็บของผู้ให้บริการเอง ผ่าน CLI ทางการ
+- **ใช้ข้อมูลล็อกอินที่ CLI บันทึกไว้แล้วเท่านั้น:** คือ `~/.codex/auth.json` (หรือ `$CODEX_HOME`) และ `~/.claude/.credentials.json` หรือรายการ `Claude Code-credentials` ใน Keychain รายการใน Keychain อ่านผ่าน `/usr/bin/security` จึงไม่มีหน้าต่างถามรหัสซ้ำๆ
+- **token ไม่ถูกส่งไปที่อื่น:** แต่ละ token ส่งไปที่ endpoint usage แบบ HTTPS ของผู้ให้บริการนั้นเท่านั้น ไม่บันทึกลงดิสก์ ไม่เขียนลง log และไม่คัดลอกไปที่ใด แอปไม่ต่ออายุหรือแก้ไข token ของ CLI
+- **การตั้งค่าไม่มีข้อมูลลับ:** ภาษา, เขตเวลา, ความถี่รีเฟรช, บริการที่แสดง และตำแหน่งหน้าต่าง เก็บใน UserDefaults ปกติ
+- **เคารพ rate limit:** ถ้าเจอ HTTP 429 แอปจะพักเฉพาะบริการนั้น ตาม `Retry-After`
+
+### ตรวจสอบการทำงาน
+
+```sh
+~/Applications/QuotaDesk.app/Contents/MacOS/QuotaDesk --self-test   # ทดสอบแบบไม่ต่อเน็ต
+~/Applications/QuotaDesk.app/Contents/MacOS/QuotaDesk --check       # อ่านค่าจริง แสดงแค่เปอร์เซ็นต์
+```
+
+> [!NOTE]
+> `build.sh` ลงนามแอปแบบ ad-hoc ถ้าแจกไฟล์ `.app` ที่ build แล้ว ผู้รับต้องคลิกขวา → **Open** ในครั้งแรก การ build จาก source เองจะไม่ติดปัญหานี้
+
+---
+
+## Disclaimer · ข้อสงวนสิทธิ์
+
+QuotaDesk is an independent, unofficial project. It is not affiliated with, endorsed by or sponsored by OpenAI or Anthropic. "Codex", "ChatGPT" and "Claude" are trademarks of their respective owners and are used only to describe compatibility. The usage endpoints it reads are undocumented and may change or stop working at any time. Use at your own risk.
+
+QuotaDesk เป็นโปรเจกต์อิสระ ไม่ใช่ผลิตภัณฑ์ทางการ และไม่มีส่วนเกี่ยวข้องกับ OpenAI หรือ Anthropic ชื่อ "Codex", "ChatGPT" และ "Claude" เป็นเครื่องหมายการค้าของเจ้าของแต่ละราย ใช้เพื่ออธิบายความเข้ากันได้เท่านั้น endpoint ที่แอปใช้อ่านข้อมูลไม่ได้เปิดเป็นทางการ อาจเปลี่ยนหรือหยุดทำงานได้ทุกเมื่อ โปรดใช้งานด้วยความเข้าใจในข้อนี้
+
+## Acknowledgements · ขอบคุณ
+
+Endpoint references: [CodexBar docs for Codex](https://github.com/steipete/CodexBar/blob/main/docs/codex.md) and [for Claude](https://github.com/steipete/CodexBar/blob/main/docs/claude.md). QuotaDesk was written independently; no CodexBar source code is included.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © 2026 filmpaisan
