@@ -23,7 +23,13 @@
   </tr>
 </table>
 
+**Install in one command · ติดตั้งด้วยคำสั่งเดียว**
+
 </div>
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/filmpaisan/QuotaDesk/main/install.sh | zsh
+```
 
 ---
 
@@ -43,7 +49,8 @@
 
 ### Requirements
 
-- macOS 14 or later, with the Xcode command-line tools (`xcode-select --install`)
+- macOS 14 or later
+- The Xcode Command Line Tools (the installer offers to install them if they're missing)
 - A Codex and/or Claude **subscription** (API keys aren't supported)
 - The official CLIs: [Codex CLI](https://github.com/openai/codex) and [Claude Code](https://docs.anthropic.com/en/docs/claude-code/setup)
 
@@ -115,7 +122,8 @@ The script downloads the latest source, builds it on your Mac (about 10 seconds)
 
 ### สิ่งที่ต้องมี
 
-- macOS 14 ขึ้นไป และ Xcode command-line tools (`xcode-select --install`)
+- macOS 14 ขึ้นไป
+- Xcode Command Line Tools (ถ้ายังไม่มี ตัวติดตั้งจะเปิดหน้าติดตั้งให้)
 - **บัญชีสมาชิก** Codex และ/หรือ Claude (ใช้ API key ไม่ได้)
 - CLI ทางการ: [Codex CLI](https://github.com/openai/codex) และ [Claude Code](https://docs.anthropic.com/en/docs/claude-code/setup)
 

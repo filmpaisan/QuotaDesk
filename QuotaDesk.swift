@@ -647,7 +647,7 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
-        .formStyle(.grouped).frame(width: 480, height: 740)
+        .formStyle(.grouped).frame(width: 480, height: 770)
     }
     @ViewBuilder func account(_ provider: Provider, name: String, reading: Reading) -> some View {
         HStack(alignment: .firstTextBaseline) {
