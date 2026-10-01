@@ -588,6 +588,8 @@ struct WidgetView: View {
 // MARK: - Settings window
 
 struct SettingsView: View {
+    static let repoURL = URL(string: "https://github.com/filmpaisan/QuotaDesk")!
+    static let supportURL = URL(string: "https://ko-fi.com/filmpaisan")!
     @ObservedObject var model: UsageModel
     @ObservedObject var settings = AppSettings.shared
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
@@ -646,8 +648,20 @@ struct SettingsView: View {
                        "Sign-in opens Terminal and runs each provider's official command (codex login / claude auth login). You enter your password only on the provider's site. This app never sees passwords, never writes tokens to disk, and sends each token only to that provider's usage endpoint."))
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
+            Section {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L("QuotaDesk ใช้ฟรีและเป็นโอเพนซอร์ส", "QuotaDesk is free and open source"))
+                        Link(L("ดูโค้ดบน GitHub", "View on GitHub"), destination: Self.repoURL).font(.caption)
+                    }
+                    Spacer()
+                    Link(destination: Self.supportURL) { Label(L("สนับสนุนผู้พัฒนา", "Support on Ko-fi"), systemImage: "cup.and.saucer.fill") }
+                        .buttonStyle(.bordered)
+                }
+            }
         }
-        .formStyle(.grouped).frame(width: 480, height: 770)
+        // Tall enough for every row, but never taller than a small laptop screen (the form scrolls then).
+        .formStyle(.grouped).frame(width: 480, height: min(840, (NSScreen.main?.visibleFrame.height ?? 900) - 40))
     }
     @ViewBuilder func account(_ provider: Provider, name: String, reading: Reading) -> some View {
         HStack(alignment: .firstTextBaseline) {

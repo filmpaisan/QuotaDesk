@@ -9,6 +9,7 @@
 ![Swift](https://img.shields.io/badge/Swift-SwiftUI-F05138?logo=swift&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-2ea44f)
 ![Languages](https://img.shields.io/badge/UI-English%20%7C%20%E0%B9%84%E0%B8%97%E0%B8%A2-4c8eda)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/filmpaisan)
 
 [English](#english) · [ภาษาไทย](#ภาษาไทย)
 
@@ -178,6 +179,16 @@ curl -fsSL https://raw.githubusercontent.com/filmpaisan/QuotaDesk/main/install.s
 > แนะนำให้ใช้คำสั่งติดตั้งแทนการแจกไฟล์ `.app` ที่ build แล้ว ไฟล์ `.app` ที่ดาวน์โหลดไปลงนามแบบ ad-hoc เท่านั้น ผู้รับต้องคลิกขวา → **Open** ในครั้งแรก
 
 ---
+
+## Support · สนับสนุน
+
+QuotaDesk is free and always will be. If it saves you a trip to the usage page, you can buy me a coffee. Thank you! 🙏
+
+QuotaDesk ใช้ฟรีตลอดไป ถ้ามีประโยชน์กับคุณ เลี้ยงกาแฟผู้พัฒนาได้ที่ลิงก์ด้านล่าง ขอบคุณครับ 🙏
+
+<a href="https://ko-fi.com/filmpaisan"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" height="36"></a>
+
+Bug reports and ideas are welcome too: [open an issue](https://github.com/filmpaisan/QuotaDesk/issues). · แจ้งบั๊กหรือเสนอไอเดียได้ที่ [Issues](https://github.com/filmpaisan/QuotaDesk/issues)
 
 ## Disclaimer · ข้อสงวนสิทธิ์
 
